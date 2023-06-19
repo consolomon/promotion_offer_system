@@ -13,9 +13,11 @@ SPARK_JARS_PACKAGES = ",".join(
         ]
     )
 
+# имена топиков в Kafka
 TOPIC_NAME_IN = "student.topic.cohort10.consolomon-in"
 TOPIC_NAME_OUT = "student.topic.cohort10.consolomon-out"
 
+# конфигурация подключения к потоку в Kafka
 KAFKA_SETTINGS = {
     'kafka.bootstrap.servers': 'rc1b-2erh7b35n4j4v869.mdb.yandexcloud.net:9091',
     'kafka.security.protocol': 'SASL_SSL',
@@ -23,14 +25,13 @@ KAFKA_SETTINGS = {
     'kafka.sasl.jaas.config': 'org.apache.kafka.common.security.scram.ScramLoginModule required username=\"de-student\" password=\"ltcneltyn\";',
 }
 
+# конфигурация подключения к базе данных в Postgres
 POSTGRES_SETTINGS = {
     'url': 'jdbc:postgresql://localhost:5432',
     'driver': 'org.postgresql.Driver',
     'user': 'jovyan',
     'password': 'jovyan'
 }
-
-TMP_DF_FILEPATH = "/home/tmp"
 
 # определяем схему входного сообщения для json
 INPUT_KAFKA_STEAM_SCHEMA = StructType([
@@ -44,35 +45,21 @@ INPUT_KAFKA_STEAM_SCHEMA = StructType([
         StructField("datetime_created", LongType()),
     ])
 
-# определяем схему выходного сообщения для json
-OUTPUT_KAFKA_STEAM_SCHEMA = StructType([
-        StructField("restaurant_id", StringType()),
-        StructField("adv_campaign_id", StringType()),
-        StructField("adv_campaign_content", StringType()),
-        StructField("adv_campaign_owner", StringType()),
-        StructField("adv_campaign_owner_contact", StringType()),
-        StructField("adv_campaign_datetime_start", LongType()),
-        StructField("adv_campaign_datetime_end", LongType()),
-        StructField("client_id", StringType()),
-        StructField("datetime_created", LongType()),
-        StructField("trigger_datetime_created", LongType()),
-    ])
-
 # метод для записи данных в 2 target: в PostgreSQL для фидбэков и в Kafka для триггеров
 def foreach_batch_function(df, epoch_id):
+    
     # сохраняем df в памяти, чтобы не создавать df заново перед отправкой в Kafka
-    # df.write.mode("overwrite").parquet(TMP_DF_FILEPATH)
+    df.persist()
        
     # записываем df в PostgreSQL с полем feedback
     write_postgres_table(df)
 
     # создаём df для отправки в Kafka. Сериализация в json.
-    ...
     # отправляем сообщения в результирующий топик Kafka без поля feedback
+
     write_kafka_stream(df)
     # очищаем память от df
-    ...
-
+    df.unpersist()
 
 def spark_init() -> SparkSession:
 
