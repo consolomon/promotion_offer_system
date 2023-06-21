@@ -1,7 +1,9 @@
 
 from datetime import datetime
+import logging
+
 from pyspark.sql import SparkSession, DataFrame
-import pyspark.sql.functions as F  # from_json, to_json, col, lit, struct
+import pyspark.sql.functions as F
 from pyspark.sql.types import StructType, StructField, StringType, LongType, TimestampType
 
 
@@ -27,7 +29,7 @@ KAFKA_SETTINGS = {
 
 # конфигурация подключения к базе данных в Postgres
 POSTGRES_SETTINGS = {
-    'url': 'jdbc:postgresql://localhost:5432',
+    # 'url': 'jdbc:postgresql://localhost:5432',
     'driver': 'org.postgresql.Driver',
     'user': 'jovyan',
     'password': 'jovyan'
@@ -60,6 +62,7 @@ def foreach_batch_function(df, epoch_id):
     write_kafka_stream(df)
     # очищаем память от df
     df.unpersist()
+        
 
 def spark_init() -> SparkSession:
 
@@ -69,12 +72,26 @@ def spark_init() -> SparkSession:
     .config("spark.jars.packages", SPARK_JARS_PACKAGES) \
     .getOrCreate()
 
+def check_postgres_table(spark: SparkSession) -> bool:
+    try:
+        spark \
+          .read \
+          .format('jdbc') \
+          .options(**POSTGRES_SETTINGS) \
+          .option('dbtable', 'de.public.subscribers_restaurants') \
+          .load()
+        return True
+    except Error:
+        return False  
+
 def read_kafka_steam(spark: SparkSession) -> DataFrame:
 
     return spark.readStream \
     .format('kafka') \
     .options(**KAFKA_SETTINGS) \
     .option('subscribe', TOPIC_NAME_IN) \
+    .option("stratingOffsets","earliest") \
+    .option("maxOffsetsPerTrigger","1000")
     .load()
 
 def read_postgres_table(spark: SparkSession) -> DataFrame:
@@ -103,12 +120,16 @@ def write_postgres_table(df: DataFrame):
     df \
     .withColumn("feedback", F.lit(None).cast('string')) \
     .write \
-    .format("jdbc") \
-    .options(**POSTGRES_SETTINGS) \
-    .option('dbtable', 'de.public.subscribers_feedback') \
+    .option("batchsize", 1000)
+    .jdbc(
+            url='jdbc:postgresql://localhost:5432',
+            table='de.public.subscribers_feedback',
+            mode='append',
+            properties=POSTGRES_SETTINGS
+    ) \
     .save()
 
-def write_kafka_stream(df: DataFrame, schema: StructType):
+def write_kafka_stream(df: DataFrame):
     
     df.select(
                 F.to_json(
@@ -135,8 +156,14 @@ def write_kafka_stream(df: DataFrame, schema: StructType):
 
 def __main__():
 
+    logger = logging.getLogger('adv-app_main')
+
     # запускаем Spark-сессию
     spark = spark_init()
+
+    # проверяем наличие таблицы в postgres
+    if check_postgres_table(spark) is False:
+        logger.error('Table not found! Check jdbc config.')    
 
     # читаем новый батч из потока в kafka
     restaurant_read_stream_df = read_kafka_steam(spark)
