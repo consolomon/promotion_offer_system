@@ -154,6 +154,7 @@ def write_kafka_stream(df: DataFrame):
            .option("topic", TOPIC_NAME_OUT) \
            .trigger(processingTime="30 seconds")
 
+
 def __main__():
 
     logger = logging.getLogger('adv-app_main')
@@ -163,7 +164,9 @@ def __main__():
 
     # проверяем наличие таблицы в postgres
     if check_postgres_table(spark) is False:
-        logger.error('Table not found! Check jdbc config.')    
+        logger.error('Table not found! Check jdbc config.')
+        spark.stop()
+        return 1
 
     # читаем новый батч из потока в kafka
     restaurant_read_stream_df = read_kafka_steam(spark)
