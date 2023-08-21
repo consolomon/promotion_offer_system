@@ -1,11 +1,11 @@
-# Promotions offer system for restaurant subscribers
+# Promotion offer system for restaurant subscribers
 
 ### Project goals
 Build a stream processing system that allows business to test a new restaurant subscription that gives subscribers exclusive promotions on restaurant meals.
 
-### System requirements
+### What system should do (DoD):
 1. Read data from Kafka in real time by using Spark Streaming and Python.
-2. Get subscriber list from the Postgres database. 
+2. Get a subscriber list from the Postgres database. 
 3. Join data from Kafka with data from the database.
 5. Send an output message to Kafka with information about promotion, user and favorites list.
 6. Insert record into the database to get feedback from the user.
