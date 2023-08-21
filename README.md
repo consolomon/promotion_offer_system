@@ -1,23 +1,22 @@
-# Проект 8-го спринта
+# Promotions offer system for restaurant subscribers
 
-### Описание
-Репозиторий предназначен для сдачи проекта 8-го спринта.
+### Project goals
+Build a stream processing system that allows business to test a new restaurant subscription that gives subscribers exclusive promotions on restaurant meals.
 
-### Как работать с репозиторием
-1. В вашем GitHub-аккаунте автоматически создастся репозиторий `de-project-sprint-8` после того, как вы привяжете свой GitHub-аккаунт на Платформе.
-2. Скопируйте репозиторий на свой компьютер. В качестве пароля укажите ваш `Access Token`, который нужно получить на странице [Personal Access Tokens](https://github.com/settings/tokens)):
-	* `git clone https://github.com/{{ username }}/de-project-sprint-8.git`
-3. Перейдите в директорию с проектом: 
-	* `cd de-project-sprint-8`
-4. Выполните проект и сохраните получившийся код в локальном репозитории:
-	* `git add .`
-	* `git commit -m 'my best commit'`
-5. Обновите репозиторий в вашем GitHub-аккаунте:
-	* `git push origin main`
+### System requirements
+1. Read data from Kafka in real time by using Spark Streaming and Python.
+2. Get subscriber list from the Postgres database. 
+3. Join data from Kafka with data from the database.
+5. Send an output message to Kafka with information about promotion, user and favorites list.
+6. Insert record into the database to get feedback from the user.
 
-### Структура репозитория
-Вложенные файлы в репозиторий будут использоваться для проверки и предоставления обратной связи по проекту. Поэтому постарайтесь публиковать ваше решение согласно установленной структуре — так будет проще соотнести задания с решениями.
+### Used tools and technologies
+ - Apache Kafka
+ - Apache Spark Streaming
+ - PySpark
+ - Python
+ - PostgreSQL
 
-Внутри `src` расположены две папки:
-- `/src/dags`;
-- `/src/sql`.
+### Repository structure
+- src/scripts/ddl_postgres_tables.sql -> SQL script that creates database tables
+- src/scripts/adv_campaign_app.py -> PySpark script that performs data stream processing  
